@@ -1,0 +1,5 @@
+#!/bin/bash
+ecpg prog.pgc -o prog.cpp
+g++ -I /usr/local/Cellar/libpq/11.3/include -c prog.cpp
+g++ -o prog prog.o -L /usr/local/Cellar/libpq/11.3/lib -lecpg -I /usr/local/Cellar/libpq/11.3/include
+

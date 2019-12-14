@@ -1,0 +1,881 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+
+EXEC SQL include sqlca.h;
+EXEC SQL include sqlda.h;
+
+
+sqlda_t *sqlda1; /* выходной дескриптор */
+sqlda_t *sqlda2; /* входной дескриптор */
+EXEC SQL BEGIN DECLARE SECTION;
+
+char ConnectionString[]= "phone@localhost:5432";
+char Login[]="arinashmeleva";
+char Password[] = "";
+
+EXEC SQL END DECLARE SECTION;
+
+EXEC SQL BEGIN DECLARE SECTION;
+char prep_string[256];
+char title[40];
+char n_passport[20];
+char full_name[40];
+char  network_type[10];
+char service_title[40];
+double cost[3];
+char description[256];
+char number[11];
+char date_reg[20];
+char date_sub[20];
+char date_cont[20];
+char title_inc[40];
+char title_out[40];
+char date_call[30];
+char out_num[20];
+char incoming_num[11];
+char  duration[20];
+EXEC SQL END DECLARE SECTION;
+
+int show_operators(){
+	 EXEC SQL DECLARE OperatorsCursor CURSOR FOR
+		SELECT title, network_type  FROM "operators";
+	EXEC SQL OPEN OperatorsCursor;
+	while(1)
+	{
+		EXEC SQL FETCH OperatorsCursor INTO :title,  :network_type;
+
+		if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+		printf("\t %s \t %s \n", title, network_type);
+	}
+
+	EXEC SQL CLOSE OperatorsCursor;
+	EXEC SQL COMMIT;
+	return 0;
+
+}
+
+int show_services(){
+
+	 EXEC SQL DECLARE ServicesCursor CURSOR FOR
+		SELECT title, service_title, cost, description  FROM "services";
+	EXEC SQL OPEN ServicesCursor;
+	while(1)
+	{
+		EXEC SQL FETCH ServicesCursor INTO :title,  :service_title, :cost, :description;
+
+		if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+		printf("\t %s \t %s \t %f \t %s \n", title, service_title, *cost, description);
+	}
+
+	EXEC SQL CLOSE ServicesCursor;
+	EXEC SQL COMMIT;
+	return 0;
+
+}
+
+int show_owners(){
+
+	 EXEC SQL DECLARE OwnersCursor CURSOR FOR
+		SELECT n_passport, full_name  FROM "owners";
+	EXEC SQL OPEN OwnersCursor;
+	while(1)
+	{
+		EXEC SQL FETCH OwnersCursor INTO :n_passport,  :full_name;
+
+		if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+		printf("\t %s \t %s \n", n_passport, full_name);
+	}
+
+	EXEC SQL CLOSE OwnersCursor;
+	EXEC SQL COMMIT;
+	return 0;
+
+}
+int show_phone(){
+
+	 EXEC SQL DECLARE PhoneCursor CURSOR FOR
+		SELECT title, number,  date_reg  FROM "phone";
+	EXEC SQL OPEN PhoneCursor;
+	while(1)
+	{
+		EXEC SQL FETCH PhoneCursor INTO :title,  :number, :date_reg;
+
+		if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+		printf("\t %s \t %s \t %s \n", title, number,  date_reg );
+	}
+
+	EXEC SQL CLOSE PhoneCursor;
+	EXEC SQL COMMIT;
+	return 0;
+
+}
+
+int show_subscriptions(){
+
+
+	 EXEC SQL DECLARE SubscriptionsCursor CURSOR FOR
+		SELECT title, number, service_title,n_passport, date_sub  FROM "subscriptions";
+	EXEC SQL OPEN SubscriptionsCursor;
+	while(1)
+	{
+		EXEC SQL FETCH SubscriptionsCursor INTO :title,  :number, :service_title, :n_passport, :date_sub;
+
+		if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+		printf("\t %s \t %s \t %s \t %s \t %s \n", title, number, service_title,n_passport, date_sub);
+	}
+
+	EXEC SQL CLOSE SubscriptionsCursor;
+	EXEC SQL COMMIT;
+	return 0;
+
+}
+
+int show_contracts(){
+
+	 EXEC SQL DECLARE ContractsCursor CURSOR FOR
+		SELECT title, number, date_cont,n_passport  FROM "contracts";
+	EXEC SQL OPEN ContractsCursor;
+	while(1)
+	{
+		EXEC SQL FETCH ContractsCursor INTO :title,  :number, :date_cont, :n_passport;
+
+		if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+		printf("\t %s \t %s \t %s \t %s  \n", title, number, date_cont, n_passport);
+	}
+
+	EXEC SQL CLOSE ContractsCursor;
+	EXEC SQL COMMIT;
+	return 0;
+
+}
+
+
+int show_calls(){
+
+	 EXEC SQL DECLARE CallsCursor CURSOR FOR
+		SELECT title_inc, title_out, date_call, out_num, incoming_num, duration  FROM "calls";
+	EXEC SQL OPEN CallsCursor;
+	while(1)
+	{
+		EXEC SQL FETCH CallsCursor INTO :title_inc, :title_out, :date_call, :out_num, :incoming_num, :duration;
+
+		if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+		printf("\t %s \t %s \t %s \t %s \t %s \t %s \n", title_inc, title_out, date_call, out_num, incoming_num, duration);
+	}
+
+	EXEC SQL CLOSE CallsCursor;
+	EXEC SQL COMMIT;
+	return 0;
+
+}
+
+int Dynamic_sql_insert_operators()
+{
+EXEC SQL BEGIN DECLARE SECTION;
+
+char stmt[]="INSERT INTO operators(title,network_type) VALUES(?, ?);";
+        EXEC SQL END DECLARE SECTION;
+
+       EXEC SQL PREPARE mystmt FROM :stmt;
+
+       EXEC SQL EXECUTE mystmt USING :title, :network_type;
+       EXEC SQL COMMIT;
+        return 0;
+}
+
+int Delete_values_opertatos()
+{
+        printf("select deleted title: ");
+        scanf("%s", title);
+        EXEC SQL DELETE FROM operators WHERE title = :title;
+
+        EXEC SQL COMMIT;
+				return 0;
+}
+
+
+int Dynamic_sql_select_opertatos()
+{
+     EXEC SQL BEGIN DECLARE SECTION;
+          const char *stmt = "SELECT title,network_type"
+             "  FROM operators "
+             "  WHERE title=?";
+     EXEC SQL END DECLARE SECTION;
+
+
+
+     EXEC SQL PREPARE sqlstmt FROM :stmt;
+
+
+    printf("select title: ");
+    scanf("%s", title);
+
+    EXEC SQL EXECUTE sqlstmt INTO :title ,:network_type  USING :title;
+    printf("\t %s \t %s \n", title, network_type);
+
+
+
+    EXEC SQL COMMIT;
+    return 0;
+}
+int Update_values_operators()
+{
+        printf("select update title:");
+        scanf("%s", title);
+        printf("enter new  network_type: ");
+        scanf("%s", network_type);
+
+
+        EXEC SQL UPDATE operators SET network_type = :network_type WHERE title = :title;
+
+        EXEC SQL COMMIT;
+        return 0;
+}
+
+int Dynamic_sql_select_more_opertatos()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+          const char *stmt = "SELECT title,network_type "
+             "  FROM operators "
+             "  WHERE network_type=?";
+     EXEC SQL END DECLARE SECTION;
+
+     EXEC SQL PREPARE sqlstmt FROM :stmt;
+
+     EXEC SQL DECLARE operators_cursor CURSOR FOR sqlstmt ;
+
+			printf("select network_type:");
+      scanf("%s", network_type);
+
+     EXEC SQL OPEN operators_cursor USING :network_type;
+
+
+
+     while (1)
+     {
+        EXEC SQL FETCH operators_cursor INTO :title, :network_type;
+        if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+				printf("\t %s \t %s \n", title, network_type);
+     }
+
+    EXEC SQL CLOSE operators_cursor;
+
+    EXEC SQL COMMIT;
+    return 0;
+
+}
+int menu_update_values()
+{
+char sitem[512];
+	while(1)
+	{
+		printf("	1. operators\n");
+		printf("	2. owners\n");
+		printf("	3. services\n");
+		printf("	4. phone\n");
+		printf("	5. subscriptions\n");
+		printf("	6. contracts\n");
+		printf("	7. calls\n");
+		printf("	8. back\n");
+		printf("	choose menu item > ");
+		if(scanf("%s", sitem)!=1) break;
+
+if (strlen(sitem)>1) continue;
+
+	switch(sitem[0])
+	{
+		case '1':
+		{
+			printf("_____________________\n");
+			printf("3. update values\n");
+			Update_values_operators();
+			printf("_____________________\n");
+			break;
+		}
+		case '2':
+		{
+			printf("_____________________\n");
+			printf("3. update values\n");
+			show_owners();
+			printf("_____________________\n");
+			break;
+		}
+		case '3':
+		{
+			printf("_____________________\n");
+			printf("3. update values\n");
+			show_services();
+			printf("_____________________\n");
+			break;
+		}
+		case '5':
+		{
+			printf("_____________________\n");
+			printf("3. update values\n");
+			show_subscriptions();
+			printf("_____________________\n");
+			break;
+		}
+		case '4':
+		{
+			printf("_____________________\n");
+			printf("3. update values\n");
+			show_phone();
+			printf("_____________________\n");
+			break;
+		}
+		case '6':
+		{
+			printf("_____________________\n");
+			printf("3. update values\n");
+			show_contracts();
+			printf("_____________________\n");
+			break;
+		}
+		case '7':
+		{
+			printf("_____________________\n");
+			printf("3. update values\n");
+			show_calls();
+			printf("_____________________\n");
+			break;
+		}
+		case '8':{
+			return 0;
+
+		}
+		default: break;
+		}
+	}
+	return 0;
+}
+
+int menu_show()
+{
+char sitem[512];
+	while(1)
+	{
+		printf("	1. operators\n");
+		printf("	2. owners\n");
+		printf("	3. services\n");
+		printf("	4. phone\n");
+		printf("	5. subscriptions\n");
+		printf("	6. contracts\n");
+		printf("	7. calls\n");
+		printf("	8. back\n");
+		printf("	choose menu item > ");
+		if(scanf("%s", sitem)!=1) break;
+
+if (strlen(sitem)>1) continue;
+
+	switch(sitem[0])
+	{
+		case '1':
+		{
+			printf("_____________________\n");
+			printf("1. show\n");
+			show_operators();
+			printf("_____________________\n");
+			break;
+		}
+		case '2':
+		{
+			printf("_____________________\n");
+			printf("1. show\n");
+			show_owners();
+			printf("_____________________\n");
+			break;
+		}
+		case '3':
+		{
+			printf("_____________________\n");
+			printf("1. show\n");
+			show_services();
+			printf("_____________________\n");
+			break;
+		}
+		case '5':
+		{
+			printf("_____________________\n");
+			printf("1. show\n");
+			show_subscriptions();
+			printf("_____________________\n");
+			break;
+		}
+		case '4':
+		{
+			printf("_____________________\n");
+			printf("1. show\n");
+			show_phone();
+			printf("_____________________\n");
+			break;
+		}
+		case '6':
+		{
+			printf("_____________________\n");
+			printf("1. show\n");
+			show_contracts();
+			printf("_____________________\n");
+			break;
+		}
+		case '7':
+		{
+			printf("_____________________\n");
+			printf("1. show\n");
+			show_calls();
+			printf("_____________________\n");
+			break;
+		}
+		case '8':{
+			return 0;
+
+		}
+		default: break;
+		}
+	}
+	return 0;
+}
+int menu_DeleteValues()
+{
+char sitem[512];
+	while(1)
+	{
+		printf("	1. operators\n");
+		printf("	2. owners\n");
+		printf("	3. services\n");
+		printf("	4. phone\n");
+		printf("	5. subscriptions\n");
+		printf("	6. contracts\n");
+		printf("	7. calls\n");
+		printf("	8. back\n");
+		printf("	choose menu item > ");
+		if(scanf("%s", sitem)!=1) break;
+
+if (strlen(sitem)>1) continue;
+
+	switch(sitem[0])
+	{
+		case '1':
+		{
+			printf("_____________________\n");
+			printf("5. delete values\n");
+			Delete_values_opertatos();
+			printf("_____________________\n");
+			break;
+		}
+		case '2':
+		{
+			printf("_____________________\n");
+			printf("5. delete values\n");
+			show_owners();
+			printf("_____________________\n");
+			break;
+		}
+		case '3':
+		{
+			printf("_____________________\n");
+			printf("5. delete values\n");
+			show_services();
+			printf("_____________________\n");
+			break;
+		}
+		case '5':
+		{
+			printf("_____________________\n");
+			printf("5. delete values\n");
+			show_subscriptions();
+			printf("_____________________\n");
+			break;
+		}
+		case '4':
+		{
+			printf("_____________________\n");
+			printf("5. delete values\n");
+			show_phone();
+			printf("_____________________\n");
+			break;
+		}
+		case '6':
+		{
+			printf("_____________________\n");
+			printf("5. delete values\n");
+			show_contracts();
+			printf("_____________________\n");
+			break;
+		}
+		case '7':
+		{
+			printf("_____________________\n");
+			printf("5. delete values\n");
+			show_calls();
+			printf("_____________________\n");
+			break;
+		}
+		case '8':{
+			return 0;
+
+		}
+		default: break;
+		}
+	}
+	return 0;
+}
+int menu_dynamic_sql_insert()
+{
+char sitem[512];
+	while(1)
+	{
+		printf("	1. operators\n");
+		printf("	2. owners\n");
+		printf("	3. services\n");
+		printf("	4. phone\n");
+		printf("	5. subscriptions\n");
+		printf("	6. contracts\n");
+		printf("	7. calls\n");
+		printf("	8. back\n");
+		printf("	choose menu item > ");
+		if(scanf("%s", sitem)!=1) break;
+
+if (strlen(sitem)>1) continue;
+
+	switch(sitem[0])
+	{
+		case '1':
+		{
+			printf("_____________________\n");
+			printf("6. Dynamic sql insert\n");
+			printf("Title:");
+			scanf("%s", title);
+			printf("Network type:");
+			scanf("%s", network_type);
+			Dynamic_sql_insert_operators();
+			printf("%s %s %s\n","Add", title, network_type);
+			printf("_____________________\n");
+			break;
+		}
+		case '2':
+		{
+			printf("_____________________\n");
+			printf("6. Dynamic sql insert\n");
+			show_owners();
+			printf("_____________________\n");
+			break;
+		}
+		case '3':
+		{
+			printf("_____________________\n");
+			printf("6. Dynamic sql insert\n");
+			show_services();
+			printf("_____________________\n");
+			break;
+		}
+		case '5':
+		{
+			printf("_____________________\n");
+			printf("6. Dynamic sql insert\n");
+			show_subscriptions();
+			printf("_____________________\n");
+			break;
+		}
+		case '4':
+		{
+			printf("_____________________\n");
+			printf("6. Dynamic sql insert\n");
+			show_phone();
+			printf("_____________________\n");
+			break;
+		}
+		case '6':
+		{
+			printf("_____________________\n");
+			printf("6. Dynamic sql insert\n");
+			show_contracts();
+			printf("_____________________\n");
+			break;
+		}
+		case '7':
+		{
+			printf("_____________________\n");
+			printf("6. Dynamic sql insert\n");
+			show_calls();
+			printf("_____________________\n");
+			break;
+		}
+		case '8':{
+			return 0;
+
+		}
+		default: break;
+		}
+	}
+	return 0;
+}
+
+int menu_dynamic_sql_select_more()
+{
+char sitem[512];
+	while(1)
+	{
+		printf("	1. operators\n");
+		printf("	2. owners\n");
+		printf("	3. services\n");
+		printf("	4. phone\n");
+		printf("	5. subscriptions\n");
+		printf("	6. contracts\n");
+		printf("	7. calls\n");
+		printf("	8. back\n");
+		printf("	choose menu item > ");
+		if(scanf("%s", sitem)!=1) break;
+
+if (strlen(sitem)>1) continue;
+
+	switch(sitem[0])
+	{
+		case '1':
+		{
+			printf("_____________________\n");
+			printf("8. Dynamic sql select more than one\n");
+			Dynamic_sql_select_more_opertatos();
+			printf("_____________________\n");
+			break;
+		}
+		case '2':
+		{
+			printf("_____________________\n");
+			printf("8. Dynamic sql select more than one\n");
+			show_owners();
+			printf("_____________________\n");
+			break;
+		}
+		case '3':
+		{
+			printf("_____________________\n");
+			printf("8. Dynamic sql select more than one\n");
+			show_services();
+			printf("_____________________\n");
+			break;
+		}
+		case '5':
+		{
+			printf("_____________________\n");
+			printf("8. Dynamic sql select more than one\n");
+			show_subscriptions();
+			printf("_____________________\n");
+			break;
+		}
+		case '4':
+		{
+			printf("_____________________\n");
+			printf("8. Dynamic sql select more than one\n");
+			show_phone();
+			printf("_____________________\n");
+			break;
+		}
+		case '6':
+		{
+			printf("_____________________\n");
+			printf("8. Dynamic sql select more than one\n");
+			show_contracts();
+			printf("_____________________\n");
+			break;
+		}
+		case '7':
+		{
+			printf("_____________________\n");
+			printf("8. Dynamic sql select more than one\n");
+			show_calls();
+			printf("_____________________\n");
+			break;
+		}
+		case '8':{
+			return 0;
+
+		}
+		default: break;
+		}
+	}
+	return 0;
+}
+int menu_dynamic_sql_select()
+{
+char sitem[512];
+	while(1)
+	{
+		printf("	1. operators\n");
+		printf("	2. owners\n");
+		printf("	3. services\n");
+		printf("	4. phone\n");
+		printf("	5. subscriptions\n");
+		printf("	6. contracts\n");
+		printf("	7. calls\n");
+		printf("	8. back\n");
+		printf("	choose menu item > ");
+		if(scanf("%s", sitem)!=1) break;
+
+if (strlen(sitem)>1) continue;
+
+	switch(sitem[0])
+	{
+		case '1':
+		{
+			printf("_____________________\n");
+			printf("7. Dynamic sql select one\n");
+			Dynamic_sql_select_opertatos();
+			printf("_____________________\n");
+			break;
+		}
+		case '2':
+		{
+			printf("_____________________\n");
+			printf("7. Dynamic sql select one\n");
+			show_owners();
+			printf("_____________________\n");
+			break;
+		}
+		case '3':
+		{
+			printf("_____________________\n");
+			printf("7. Dynamic sql select one\n");
+			show_services();
+			printf("_____________________\n");
+			break;
+		}
+		case '5':
+		{
+			printf("_____________________\n");
+			printf("7. Dynamic sql select one\n");
+			show_subscriptions();
+			printf("_____________________\n");
+			break;
+		}
+		case '4':
+		{
+			printf("_____________________\n");
+			printf("7. Dynamic sql select one\n");
+			show_phone();
+			printf("_____________________\n");
+			break;
+		}
+		case '6':
+		{
+			printf("_____________________\n");
+			printf("7. Dynamic sql select one\n");
+			show_contracts();
+			printf("_____________________\n");
+			break;
+		}
+		case '7':
+		{
+			printf("_____________________\n");
+			printf("7. Dynamic sql select one\n");
+			show_calls();
+			printf("_____________________\n");
+			break;
+		}
+		case '8':{
+			return 0;
+
+		}
+		default: break;
+		}
+	}
+	return 0;
+}
+
+
+int menu()
+{
+	char sitem[512];
+	while(1)
+	{
+		printf("1. show\n");
+		printf("3. update values\n");
+		printf("5. delete values\n");
+		printf("6. Dynamic sql insert\n");
+		printf("7. Dynamic sql select one\n");
+		printf("8. Dynamic sql select more than one\n");
+		printf("9. quit\n");
+		printf("choose menu item > ");
+		if(scanf("%s", sitem)!=1) break;
+
+if (strlen(sitem)>1) continue;
+
+	switch(sitem[0])
+	{
+		case '1':
+		{
+			printf("_____________________\n");
+			printf("1. show\n");
+			menu_show();
+			printf("_____________________\n");
+			break;
+		}
+		 case '3':
+			{
+				printf("_____________________\n");
+				printf("3. update values\n");
+				menu_update_values();
+				printf("_____________________\n");
+				break;
+			}
+		 case '5':
+			{
+				printf("_____________________\n");
+				printf("5. delete values\n");
+				menu_DeleteValues();
+				printf("_____________________\n");
+				break;
+			}
+		case '6':
+		{
+			printf("_____________________\n");
+			printf("6. dynamic_sql_insert\n");
+			menu_dynamic_sql_insert();
+			printf("_____________________\n");
+			break;
+		}
+		case '7':
+			{
+				menu_dynamic_sql_select();
+				break;
+			}
+
+		case '8':
+			{
+				menu_dynamic_sql_select_more();
+				break;
+			}
+
+		case '9':
+		{
+			return 0;
+		}
+		default: break;
+		}
+	}
+	return 0;
+}
+
+
+
+int main(){
+
+ EXEC SQL CONNECT TO :ConnectionString USER :Login using :Password;
+ if (sqlca.sqlcode !=0 || strncmp(sqlca.sqlstate,"00",2))
+{
+	printf("Bad conntected");
+	return -1;
+}
+else
+		{
+					printf("connect --OK\n");
+					menu();
+		}
+exec sql disconnect;
+printf("disconnect --OK\n");
+
+return 0;
+}
