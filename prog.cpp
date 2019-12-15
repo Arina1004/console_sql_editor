@@ -148,6 +148,7 @@ sqlda_t *sqlda2; /* входной дескриптор */
  
  
   
+  
 
 #line 22 "prog.pgc"
  char prep_string [ 256 ] ;
@@ -168,7 +169,7 @@ sqlda_t *sqlda2; /* входной дескриптор */
  char service_title [ 40 ] ;
  
 #line 28 "prog.pgc"
- double cost [ 3 ] ;
+ char cost [ 10 ] ;
  
 #line 29 "prog.pgc"
  char description [ 256 ] ;
@@ -202,9 +203,11 @@ sqlda_t *sqlda2; /* входной дескриптор */
  
 #line 39 "prog.pgc"
  char duration [ 20 ] ;
-/* exec sql end declare section */
+ 
 #line 40 "prog.pgc"
-
+ char strSelect [ 256 ] ;
+/* exec sql end declare section */
+#line 41 "prog.pgc"
 
 int show_operators(){
 	 /* declare OperatorsCursor cursor for select title , network_type from \"operators\" */
@@ -252,7 +255,7 @@ int show_services(){
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
 	ECPGt_char,(service_title),(long)40,(long)1,(40)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
-	ECPGt_double,(cost),(long)1,(long)3,sizeof(double), 
+	ECPGt_char,(cost),(long)10,(long)1,(10)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
 	ECPGt_char,(description),(long)256,(long)1,(256)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EORT);}
@@ -260,7 +263,7 @@ int show_services(){
 
 
 		if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
-		printf("\t %s \t %s \t %f \t %s \n", title, service_title, *cost, description);
+		printf("\t %s \t %s \t %s \t %s \n", title, service_title, cost, description);
 	}
 
 	{ ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "close ServicesCursor", ECPGt_EOIT, ECPGt_EORT);}
@@ -454,20 +457,97 @@ int show_calls(){
 
 }
 
+int show_all()
+{
+	/* exec sql begin declare section */  
+		 
+		 
+		 
+		
+#line 177 "prog.pgc"
+ int colcount ;
+ 
+#line 178 "prog.pgc"
+ char str [ 1024 ] ;
+ 
+#line 179 "prog.pgc"
+ char colName [ 1024 ] ;
+ 
+#line 180 "prog.pgc"
+ int index ;
+/* exec sql end declare section */
+#line 181 "prog.pgc"
+
+
+
+		{ ECPGprepare(__LINE__, NULL, 0, "mystr", strSelect);}
+#line 184 "prog.pgc"
+
+		ECPGallocate_desc(__LINE__, "myDescr");
+#line 185 "prog.pgc"
+
+		/* declare show_cursor cursor for $1 */
+#line 186 "prog.pgc"
+
+		{ ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "declare show_cursor cursor for $1", 
+	ECPGt_char_variable,(ECPGprepared_statement(NULL, "mystr", __LINE__)),(long)1,(long)1,(1)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 187 "prog.pgc"
+
+		while (1) {
+			{ ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "fetch next from show_cursor", ECPGt_EOIT, 
+	ECPGt_descriptor, "myDescr", 1L, 1L, 1L, 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EORT);}
+#line 189 "prog.pgc"
+
+				if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+				{ ECPGget_desc_header(__LINE__, "myDescr", &(colcount));
+}
+#line 191 "prog.pgc"
+
+				for(index =1; index <= colcount; index++)
+				{
+					{ ECPGget_desc(__LINE__, "myDescr", index,ECPGd_data,
+	ECPGt_char,(str),(long)1024,(long)1,(1024)*sizeof(char), ECPGd_EODT);
+}
+#line 194 "prog.pgc"
+
+					{ ECPGget_desc(__LINE__, "myDescr", index,ECPGd_name,
+	ECPGt_char,(colName),(long)1024,(long)1,(1024)*sizeof(char), ECPGd_EODT);
+}
+#line 195 "prog.pgc"
+
+					printf( "%s: %s\t",colName,str);
+					}
+						printf( "\n");}
+				printf( "\n");
+	{ ECPGdeallocate(__LINE__, 0, NULL, "mystr");}
+#line 200 "prog.pgc"
+
+	ECPGdeallocate_desc(__LINE__, "myDescr");
+#line 201 "prog.pgc"
+
+
+    { ECPGtrans(__LINE__, NULL, "commit");}
+#line 203 "prog.pgc"
+
+    return 0;
+}
+
 int Dynamic_sql_insert_operators()
 {
 /* exec sql begin declare section */
 
  
         
-#line 179 "prog.pgc"
+#line 211 "prog.pgc"
  char stmt [] = "INSERT INTO operators(title,network_type) VALUES(?, ?);" ;
 /* exec sql end declare section */
-#line 180 "prog.pgc"
+#line 212 "prog.pgc"
 
 
        { ECPGprepare(__LINE__, NULL, 0, "mystmt", stmt);}
-#line 182 "prog.pgc"
+#line 214 "prog.pgc"
 
 
        { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_execute, "mystmt", 
@@ -475,10 +555,204 @@ int Dynamic_sql_insert_operators()
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
 	ECPGt_char,(network_type),(long)10,(long)1,(10)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
-#line 184 "prog.pgc"
+#line 216 "prog.pgc"
 
        { ECPGtrans(__LINE__, NULL, "commit");}
-#line 185 "prog.pgc"
+#line 217 "prog.pgc"
+
+        return 0;
+}
+int Dynamic_sql_insert_owners()
+{
+/* exec sql begin declare section */
+
+ 
+        
+#line 224 "prog.pgc"
+ char stmt [] = "INSERT INTO owners(n_passport, full_name) VALUES(?, ?);" ;
+/* exec sql end declare section */
+#line 225 "prog.pgc"
+
+
+       { ECPGprepare(__LINE__, NULL, 0, "mystmt", stmt);}
+#line 227 "prog.pgc"
+
+
+       { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_execute, "mystmt", 
+	ECPGt_char,(n_passport),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(full_name),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 229 "prog.pgc"
+
+       { ECPGtrans(__LINE__, NULL, "commit");}
+#line 230 "prog.pgc"
+
+        return 0;
+}
+int Dynamic_sql_insert_services()
+{
+/* exec sql begin declare section */
+
+ 
+        
+#line 237 "prog.pgc"
+ char stmt [] = "INSERT INTO services(title, service_title, cost, description) VALUES(?, ?, ?, ?);" ;
+/* exec sql end declare section */
+#line 238 "prog.pgc"
+
+
+       { ECPGprepare(__LINE__, NULL, 0, "mystmt", stmt);}
+#line 240 "prog.pgc"
+
+
+       { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_execute, "mystmt", 
+	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(service_title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(cost),(long)10,(long)1,(10)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(description),(long)256,(long)1,(256)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 242 "prog.pgc"
+
+       { ECPGtrans(__LINE__, NULL, "commit");}
+#line 243 "prog.pgc"
+
+        return 0;
+}
+
+int Dynamic_sql_insert_subscriptions()
+{
+/* exec sql begin declare section */
+
+ 
+        
+#line 251 "prog.pgc"
+ char stmt [] = "INSERT INTO subscriptions(title, number, service_title,n_passport, date_sub) VALUES(?, ?, ?, ?, ?);" ;
+/* exec sql end declare section */
+#line 252 "prog.pgc"
+
+
+       { ECPGprepare(__LINE__, NULL, 0, "mystmt", stmt);}
+#line 254 "prog.pgc"
+
+
+       { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_execute, "mystmt", 
+	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(number),(long)11,(long)1,(11)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(service_title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(n_passport),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(date_sub),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 256 "prog.pgc"
+
+       { ECPGtrans(__LINE__, NULL, "commit");}
+#line 257 "prog.pgc"
+
+        return 0;
+}
+
+int Dynamic_sql_insert_phone()
+{
+/* exec sql begin declare section */
+
+ 
+        
+#line 265 "prog.pgc"
+ char stmt [] = "INSERT INTO phone(title, number,  date_reg ) VALUES(?, ?, ?);" ;
+/* exec sql end declare section */
+#line 266 "prog.pgc"
+
+
+       { ECPGprepare(__LINE__, NULL, 0, "mystmt", stmt);}
+#line 268 "prog.pgc"
+
+
+       { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_execute, "mystmt", 
+	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(number),(long)11,(long)1,(11)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(date_reg),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 270 "prog.pgc"
+
+       { ECPGtrans(__LINE__, NULL, "commit");}
+#line 271 "prog.pgc"
+
+        return 0;
+}
+int Dynamic_sql_insert_contracts()
+{
+/* exec sql begin declare section */
+
+ 
+				
+#line 278 "prog.pgc"
+ char stmt [] = "INSERT INTO contracts(title, number,  date_reg,n_passport ) VALUES(?, ?, ?, ?);" ;
+/* exec sql end declare section */
+#line 279 "prog.pgc"
+
+
+       { ECPGprepare(__LINE__, NULL, 0, "mystmt", stmt);}
+#line 281 "prog.pgc"
+
+
+       { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_execute, "mystmt", 
+	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(number),(long)11,(long)1,(11)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(date_reg),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(n_passport),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 283 "prog.pgc"
+
+       { ECPGtrans(__LINE__, NULL, "commit");}
+#line 284 "prog.pgc"
+
+        return 0;
+}
+int Dynamic_sql_insert_calls()
+{
+/* exec sql begin declare section */
+
+ 
+				
+#line 291 "prog.pgc"
+ char stmt [] = "INSERT INTO calls(title_inc, title_out, date_call, out_num, incoming_num, duration ) VALUES(?, ?, ?, ?,?,?);" ;
+/* exec sql end declare section */
+#line 292 "prog.pgc"
+
+
+       { ECPGprepare(__LINE__, NULL, 0, "mystmt", stmt);}
+#line 294 "prog.pgc"
+
+
+       { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_execute, "mystmt", 
+	ECPGt_char,(title_inc),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(title_out),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(date_call),(long)30,(long)1,(30)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(out_num),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(incoming_num),(long)11,(long)1,(11)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(duration),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 296 "prog.pgc"
+
+       { ECPGtrans(__LINE__, NULL, "commit");}
+#line 297 "prog.pgc"
 
         return 0;
 }
@@ -490,54 +764,219 @@ int Delete_values_opertatos()
         { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "delete from operators where title = $1 ", 
 	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
-#line 193 "prog.pgc"
+#line 305 "prog.pgc"
 
 
         { ECPGtrans(__LINE__, NULL, "commit");}
-#line 195 "prog.pgc"
+#line 307 "prog.pgc"
 
 				return 0;
 }
 
-
-int Dynamic_sql_select_opertatos()
+int Delete_values_owners()
 {
-     /* exec sql begin declare section */
-              
-             
-             
-     
-#line 203 "prog.pgc"
- const char * stmt = "SELECT title,network_type" "  FROM operators " "  WHERE title=?" ;
-/* exec sql end declare section */
-#line 206 "prog.pgc"
+        printf("select deleted n_passport: ");
+        scanf("%s", n_passport);
+        { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "delete from owners where n_passport = $1 ", 
+	ECPGt_char,(n_passport),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 315 "prog.pgc"
 
 
+        { ECPGtrans(__LINE__, NULL, "commit");}
+#line 317 "prog.pgc"
 
-
-     { ECPGprepare(__LINE__, NULL, 0, "sqlstmt", stmt);}
-#line 210 "prog.pgc"
-
-
-
-    printf("select title: ");
-    scanf("%s", title);
-
-    { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_execute, "sqlstmt", 
-	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
-	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, 
+				return 0;
+}
+int Delete_values_services()
+{
+        printf("select deleted title: ");
+        scanf("%s", title);
+				printf("and service_title: ");
+        scanf("%s", service_title);
+        { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "delete from services where title = $1  and service_title = $2 ", 
 	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
-	ECPGt_char,(network_type),(long)10,(long)1,(10)*sizeof(char), 
+	ECPGt_char,(service_title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 326 "prog.pgc"
+
+
+        { ECPGtrans(__LINE__, NULL, "commit");}
+#line 328 "prog.pgc"
+
+				return 0;
+}
+int Delete_values_subscriptions()
+{
+        printf("select deleted n_passport: ");
+        scanf("%s", n_passport);
+				printf("and service_title: ");
+        scanf("%s", service_title);
+				printf("and number: ");
+        scanf("%s", number);
+				printf("and date_sub: ");
+        scanf("%s", date_sub);
+        { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "delete from subscriptions where n_passport = $1  and service_title = $2  and number = $3  and date_sub = $4 ", 
+	ECPGt_char,(n_passport),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(service_title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(number),(long)11,(long)1,(11)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(date_sub),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 341 "prog.pgc"
+
+
+        { ECPGtrans(__LINE__, NULL, "commit");}
+#line 343 "prog.pgc"
+
+				return 0;
+}
+int Delete_values_phone()
+{
+        printf("select deleted title: ");
+        scanf("%s", title);
+				printf("and number: ");
+        scanf("%s", number);
+
+        { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "delete from phone where title = $1  and number = $2 ", 
+	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(number),(long)11,(long)1,(11)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 353 "prog.pgc"
+
+
+        { ECPGtrans(__LINE__, NULL, "commit");}
+#line 355 "prog.pgc"
+
+				return 0;
+}
+int Delete_values_contracts()
+{
+        printf("select deleted n_passport: ");
+        scanf("%s", n_passport);
+				printf("and title: ");
+        scanf("%s", title);
+				printf("and number: ");
+        scanf("%s", number);
+				printf("and date_cont: ");
+        scanf("%s", date_cont);
+        { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "delete from contracts where n_passport = $1  and title = $2  and number = $3  and date_cont = $4 ", 
+	ECPGt_char,(n_passport),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(number),(long)11,(long)1,(11)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(date_cont),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 368 "prog.pgc"
+
+
+        { ECPGtrans(__LINE__, NULL, "commit");}
+#line 370 "prog.pgc"
+
+				return 0;
+}
+
+int Delete_values_calls()
+{
+        printf("select deleted incoming_num: ");
+        scanf("%s", incoming_num);
+				printf("and out_num: ");
+        scanf("%s", out_num);
+				printf("and date_call: ");
+        scanf("%s", date_call);
+        { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "delete from calls where incoming_num = $1  and out_num = $2  and date_call = $3 ", 
+	ECPGt_char,(incoming_num),(long)11,(long)1,(11)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(out_num),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(date_call),(long)30,(long)1,(30)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 382 "prog.pgc"
+
+
+        { ECPGtrans(__LINE__, NULL, "commit");}
+#line 384 "prog.pgc"
+
+				return 0;
+}
+
+int Dynamic_sql_select()
+{
+	/* exec sql begin declare section */  
+		 
+		 
+		 
+		
+#line 390 "prog.pgc"
+ int colcount ;
+ 
+#line 391 "prog.pgc"
+ char str [ 1024 ] ;
+ 
+#line 392 "prog.pgc"
+ char colName [ 1024 ] ;
+ 
+#line 393 "prog.pgc"
+ int index ;
+/* exec sql end declare section */
+#line 394 "prog.pgc"
+
+
+
+		{ ECPGprepare(__LINE__, NULL, 0, "mystr", strSelect);}
+#line 397 "prog.pgc"
+
+		ECPGallocate_desc(__LINE__, "myDescr");
+#line 398 "prog.pgc"
+ /* declare my_cursor cursor for $1 */
+#line 398 "prog.pgc"
+ { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "declare my_cursor cursor for $1", 
+	ECPGt_char_variable,(ECPGprepared_statement(NULL, "mystr", __LINE__)),(long)1,(long)1,(1)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 398 "prog.pgc"
+
+		while (1) {
+			{ ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "fetch next from my_cursor", ECPGt_EOIT, 
+	ECPGt_descriptor, "myDescr", 1L, 1L, 1L, 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EORT);}
-#line 216 "prog.pgc"
+#line 400 "prog.pgc"
 
-    printf("\t %s \t %s \n", title, network_type);
+				if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+				{ ECPGget_desc_header(__LINE__, "myDescr", &(colcount));
+}
+#line 402 "prog.pgc"
 
+				for(index =1; index <= colcount; index++)
+				{
+					{ ECPGget_desc(__LINE__, "myDescr", index,ECPGd_data,
+	ECPGt_char,(str),(long)1024,(long)1,(1024)*sizeof(char), ECPGd_EODT);
+}
+#line 405 "prog.pgc"
+
+					{ ECPGget_desc(__LINE__, "myDescr", index,ECPGd_name,
+	ECPGt_char,(colName),(long)1024,(long)1,(1024)*sizeof(char), ECPGd_EODT);
+}
+#line 406 "prog.pgc"
+
+					printf( "%s: %s\t",colName,str);
+					}
+						printf( "\n");}
+				printf( "\n");
+	{ ECPGdeallocate(__LINE__, 0, NULL, "mystr");}
+#line 411 "prog.pgc"
+
+	ECPGdeallocate_desc(__LINE__, "myDescr");
+#line 412 "prog.pgc"
 
 
     { ECPGtrans(__LINE__, NULL, "commit");}
-#line 221 "prog.pgc"
+#line 414 "prog.pgc"
 
     return 0;
 }
@@ -554,15 +993,166 @@ int Update_values_operators()
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
 	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
-#line 232 "prog.pgc"
+#line 425 "prog.pgc"
 
 
         { ECPGtrans(__LINE__, NULL, "commit");}
-#line 234 "prog.pgc"
+#line 427 "prog.pgc"
+
+        return 0;
+}
+int Update_values_owners()
+{
+        printf("select update where full_name:");
+        scanf("%s", full_name);
+        printf("enter new  n_passport: ");
+        scanf("%s", n_passport);
+
+        { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "update owners set full_name = $1  where n_passport = $2 ", 
+	ECPGt_char,(full_name),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(n_passport),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 437 "prog.pgc"
+
+
+        { ECPGtrans(__LINE__, NULL, "commit");}
+#line 439 "prog.pgc"
+
+        return 0;
+}
+int Update_values_services()
+{
+				printf("select update where title: ");
+				scanf("%s", title);
+				printf("service_title: ");
+				scanf("%s", service_title);
+				printf("enter new cost: ");
+				scanf("%s", cost);
+				printf("description: ");
+				scanf("%s", description);
+
+        { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "update services set description = $1  where title = $2  and service_title = $3 ", 
+	ECPGt_char,(description),(long)256,(long)1,(256)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(service_title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 453 "prog.pgc"
+
+				{ ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "update services set cost = $1  where title = $2  and service_title = $3 ", 
+	ECPGt_char,(cost),(long)10,(long)1,(10)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(service_title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 454 "prog.pgc"
+
+
+        { ECPGtrans(__LINE__, NULL, "commit");}
+#line 456 "prog.pgc"
+
+        return 0;
+}
+int Update_values_phone()
+{
+			printf("select update where title: ");
+			scanf("%s", title);
+			printf("number: ");
+			scanf("%s", number);
+			printf("enter new date_reg: ");
+			scanf("%s", date_reg);
+
+        { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "update phone set date_reg = $1  where title = $2  and number = $3 ", 
+	ECPGt_char,(date_reg),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(number),(long)11,(long)1,(11)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 468 "prog.pgc"
+
+
+        { ECPGtrans(__LINE__, NULL, "commit");}
+#line 470 "prog.pgc"
+
+        return 0;
+}
+int Update_values_subscriptions()
+{
+			printf("select update where number: ");
+			scanf("%s", number);
+			printf("service_title: ");
+			scanf("%s", service_title);
+			printf("n_passport: ");
+			scanf("%s", n_passport);
+			printf("date_sub: ");
+			scanf("%s", date_sub);
+			printf("enter new title: ");
+			scanf("%s", title);
+      { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "update subscriptions set title = $1  where n_passport = $2  and service_title = $3  and number = $4  and date_sub = $5 ", 
+	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(n_passport),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(service_title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(number),(long)11,(long)1,(11)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(date_sub),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 485 "prog.pgc"
+
+
+        { ECPGtrans(__LINE__, NULL, "commit");}
+#line 487 "prog.pgc"
 
         return 0;
 }
 
+int Update_values_contracts()
+{
+			printf("No update");
+        return 0;
+}
+int Update_values_calls()
+{
+			printf(" select update where out_num: ");
+			scanf("%s", out_num);
+			printf("incoming_num: ");
+			scanf("%s", incoming_num);
+			printf("date_call: ");
+			scanf("%s", date_call);
+      printf("enter new title_inc: ");
+			scanf("%s", title_inc);
+			printf("title_out: ");
+			scanf("%s", title_out);
+			printf("duration: ");
+			scanf("%s", duration);
+
+        { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "update calls set title_inc = $1  and title_out = $2  and duration = $3  where incoming_num = $4  and out_num = $5  and date_call = $6 ", 
+	ECPGt_char,(title_inc),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(title_out),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(duration),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(incoming_num),(long)11,(long)1,(11)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(out_num),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(date_call),(long)30,(long)1,(30)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 511 "prog.pgc"
+
+
+        { ECPGtrans(__LINE__, NULL, "commit");}
+#line 513 "prog.pgc"
+
+        return 0;
+}
 int Dynamic_sql_select_more_opertatos()
 {
 	/* exec sql begin declare section */
@@ -570,18 +1160,18 @@ int Dynamic_sql_select_more_opertatos()
              
              
      
-#line 241 "prog.pgc"
+#line 519 "prog.pgc"
  const char * stmt = "SELECT title,network_type " "  FROM operators " "  WHERE network_type=?" ;
 /* exec sql end declare section */
-#line 244 "prog.pgc"
+#line 522 "prog.pgc"
 
 
      { ECPGprepare(__LINE__, NULL, 0, "sqlstmt", stmt);}
-#line 246 "prog.pgc"
+#line 524 "prog.pgc"
 
 
      /* declare operators_cursor cursor for $1 */
-#line 248 "prog.pgc"
+#line 526 "prog.pgc"
 
 
 			printf("select network_type:");
@@ -592,8 +1182,7 @@ int Dynamic_sql_select_more_opertatos()
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
 	ECPGt_char,(network_type),(long)10,(long)1,(10)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
-#line 253 "prog.pgc"
-
+#line 531 "prog.pgc"
 
 
 
@@ -604,18 +1193,18 @@ int Dynamic_sql_select_more_opertatos()
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
 	ECPGt_char,(network_type),(long)10,(long)1,(10)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EORT);}
-#line 259 "prog.pgc"
+#line 536 "prog.pgc"
 
         if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
 				printf("\t %s \t %s \n", title, network_type);
      }
 
     { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "close operators_cursor", ECPGt_EOIT, ECPGt_EORT);}
-#line 264 "prog.pgc"
+#line 541 "prog.pgc"
 
 
     { ECPGtrans(__LINE__, NULL, "commit");}
-#line 266 "prog.pgc"
+#line 543 "prog.pgc"
 
     return 0;
 
@@ -645,6 +1234,7 @@ if (strlen(sitem)>1) continue;
 			printf("_____________________\n");
 			printf("3. update values\n");
 			Update_values_operators();
+
 			printf("_____________________\n");
 			break;
 		}
@@ -652,7 +1242,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. update values\n");
-			show_owners();
+			Update_values_owners();
+
 			printf("_____________________\n");
 			break;
 		}
@@ -660,7 +1251,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. update values\n");
-			show_services();
+			Update_values_services();
 			printf("_____________________\n");
 			break;
 		}
@@ -668,7 +1259,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. update values\n");
-			show_subscriptions();
+			Update_values_subscriptions();
+
 			printf("_____________________\n");
 			break;
 		}
@@ -676,7 +1268,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. update values\n");
-			show_phone();
+			Update_values_phone();
+
 			printf("_____________________\n");
 			break;
 		}
@@ -684,7 +1277,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. update values\n");
-			show_contracts();
+			Update_values_contracts();
+
 			printf("_____________________\n");
 			break;
 		}
@@ -692,7 +1286,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. update values\n");
-			show_calls();
+			Update_values_calls();
+
 			printf("_____________________\n");
 			break;
 		}
@@ -730,7 +1325,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_operators();
+			strcpy(strSelect, "select * from operators");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -738,7 +1334,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_owners();
+			strcpy(strSelect, "select * from owners");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -746,7 +1343,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_services();
+			strcpy(strSelect, "select * from services");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -754,7 +1352,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_subscriptions();
+			strcpy(strSelect, "select * from subscriptions");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -762,7 +1361,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_phone();
+			strcpy(strSelect, "select * from phone");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -770,7 +1370,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_contracts();
+			strcpy(strSelect, "select * from contracts");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -778,7 +1379,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_calls();
+			strcpy(strSelect, "select * from calls");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -823,7 +1425,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("5. delete values\n");
-			show_owners();
+			Delete_values_owners();
 			printf("_____________________\n");
 			break;
 		}
@@ -831,7 +1433,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("5. delete values\n");
-			show_services();
+			Delete_values_services();
 			printf("_____________________\n");
 			break;
 		}
@@ -839,7 +1441,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("5. delete values\n");
-			show_subscriptions();
+			Delete_values_subscriptions();
 			printf("_____________________\n");
 			break;
 		}
@@ -847,7 +1449,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("5. delete values\n");
-			show_phone();
+			Delete_values_phone();
 			printf("_____________________\n");
 			break;
 		}
@@ -855,7 +1457,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("5. delete values\n");
-			show_contracts();
+			Delete_values_contracts();
 			printf("_____________________\n");
 			break;
 		}
@@ -863,7 +1465,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("5. delete values\n");
-			show_calls();
+			Delete_values_calls();
 			printf("_____________________\n");
 			break;
 		}
@@ -900,9 +1502,9 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			printf("Title:");
+			printf("Title: ");
 			scanf("%s", title);
-			printf("Network type:");
+			printf("Network type: ");
 			scanf("%s", network_type);
 			Dynamic_sql_insert_operators();
 			printf("%s %s %s\n","Add", title, network_type);
@@ -913,7 +1515,11 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			show_owners();
+			printf("n_passport: ");
+			scanf("%s", n_passport);
+			printf("full_name: ");
+			scanf("%s", full_name);
+			Dynamic_sql_insert_owners();
 			printf("_____________________\n");
 			break;
 		}
@@ -921,7 +1527,15 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			show_services();
+			printf("title: ");
+			scanf("%s", title);
+			printf("service_title: ");
+			scanf("%s", service_title);
+			printf("cost: ");
+			scanf("%s", cost);
+			printf("description: ");
+			scanf("%s", description);
+			Dynamic_sql_insert_services();
 			printf("_____________________\n");
 			break;
 		}
@@ -929,7 +1543,17 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			show_subscriptions();
+			printf("title: ");
+			scanf("%s", title);
+			printf("number: ");
+			scanf("%s", number);
+			printf("service_title: ");
+			scanf("%s", service_title);
+			printf("n_passport: ");
+			scanf("%s", n_passport);
+			printf("date_sub: ");
+			scanf("%s", date_sub);
+			Dynamic_sql_insert_subscriptions();
 			printf("_____________________\n");
 			break;
 		}
@@ -937,7 +1561,13 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			show_phone();
+			printf("title: ");
+			scanf("%s", title);
+			printf("number: ");
+			scanf("%s", number);
+			printf("date_reg: ");
+			scanf("%s", date_reg);
+			Dynamic_sql_insert_phone();
 			printf("_____________________\n");
 			break;
 		}
@@ -945,7 +1575,15 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			show_contracts();
+			printf("title: ");
+			scanf("%s", title);
+			printf("number: ");
+			scanf("%s", number);
+			printf("date_cont: ");
+			scanf("%s", date_cont);
+			printf("n_passport: ");
+			scanf("%s", n_passport);
+			Dynamic_sql_insert_contracts();
 			printf("_____________________\n");
 			break;
 		}
@@ -953,7 +1591,19 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			show_calls();
+			printf("title_inc: ");
+			scanf("%s", title_inc);
+			printf("title_out: ");
+			scanf("%s", title_out);
+			printf("date_call: ");
+			scanf("%s", date_call);
+			printf("out_num: ");
+			scanf("%s", out_num);
+			printf("incoming_num: ");
+			scanf("%s", incoming_num);
+			printf("duration: ");
+			scanf("%s", duration);
+			Dynamic_sql_insert_calls();
 			printf("_____________________\n");
 			break;
 		}
@@ -1076,7 +1726,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			Dynamic_sql_select_opertatos();
+			strcpy(strSelect, "select * from operators");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -1084,7 +1735,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			show_owners();
+			strcpy(strSelect, "select * from owners");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -1092,7 +1744,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			show_services();
+			strcpy(strSelect, "select * from services");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -1100,7 +1753,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			show_subscriptions();
+			strcpy(strSelect, "select * from subscriptions");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -1108,7 +1762,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			show_phone();
+			strcpy(strSelect, "select * from phone");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -1116,7 +1771,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			show_contracts();
+			strcpy(strSelect, "select * from contracts");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -1124,7 +1780,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			show_calls();
+			strcpy(strSelect, "select * from calls");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -1217,7 +1874,7 @@ if (strlen(sitem)>1) continue;
 int main(){
 
  { ECPGconnect(__LINE__, 0, ConnectionString , Login , Password , NULL, 0); }
-#line 866 "prog.pgc"
+#line 1211 "prog.pgc"
 
  if (sqlca.sqlcode !=0 || strncmp(sqlca.sqlstate,"00",2))
 {
@@ -1230,7 +1887,7 @@ else
 					menu();
 		}
 { ECPGdisconnect(__LINE__, "CURRENT");}
-#line 877 "prog.pgc"
+#line 1222 "prog.pgc"
 
 printf("disconnect --OK\n");
 

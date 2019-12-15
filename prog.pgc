@@ -25,7 +25,7 @@ char n_passport[20];
 char full_name[40];
 char  network_type[10];
 char service_title[40];
-double cost[3];
+char cost[10];
 char description[256];
 char number[11];
 char date_reg[20];
@@ -37,8 +37,8 @@ char date_call[30];
 char out_num[20];
 char incoming_num[11];
 char  duration[20];
+char strSelect [256];
 EXEC SQL END DECLARE SECTION;
-
 int show_operators(){
 	 EXEC SQL DECLARE OperatorsCursor CURSOR FOR
 		SELECT title, network_type  FROM "operators";
@@ -67,7 +67,7 @@ int show_services(){
 		EXEC SQL FETCH ServicesCursor INTO :title,  :service_title, :cost, :description;
 
 		if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
-		printf("\t %s \t %s \t %f \t %s \n", title, service_title, *cost, description);
+		printf("\t %s \t %s \t %s \t %s \n", title, service_title, cost, description);
 	}
 
 	EXEC SQL CLOSE ServicesCursor;
@@ -97,7 +97,7 @@ int show_owners(){
 int show_phone(){
 
 	 EXEC SQL DECLARE PhoneCursor CURSOR FOR
-		SELECT title, number,  date_reg  FROM "phone";
+		SELECT title, number,  date_reg FROM "phone";
 	EXEC SQL OPEN PhoneCursor;
 	while(1)
 	{
@@ -172,6 +172,38 @@ int show_calls(){
 
 }
 
+int show_all()
+{
+	EXEC SQL BEGIN DECLARE SECTION; int colcount;
+		char str[1024];
+		char colName[1024];
+		int index;
+		EXEC SQL END DECLARE SECTION;
+
+
+		EXEC SQL PREPARE myStr FROM :strSelect;
+		EXEC SQL ALLOCATE DESCRIPTOR myDescr;
+		EXEC SQL DECLARE show_cursor CURSOR FOR myStr;
+		EXEC SQL OPEN show_cursor;
+		while (1) {
+			EXEC SQL FETCH NEXT FROM show_cursor INTO SQL DESCRIPTOR myDescr;
+				if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+				EXEC SQL GET DESCRIPTOR myDescr :colcount = COUNT;
+				for(index =1; index <= colcount; index++)
+				{
+					EXEC SQL GET DESCRIPTOR myDescr VALUE :index :str = DATA;
+					EXEC SQL GET DESCRIPTOR myDescr VALUE :index :colName = NAME;
+					printf( "%s: %s\t",colName,str);
+					}
+						printf( "\n");}
+				printf( "\n");
+	EXEC SQL DEALLOCATE PREPARE myStr;
+	EXEC SQL DEALLOCATE DESCRIPTOR myDescr;
+
+    EXEC SQL COMMIT;
+    return 0;
+}
+
 int Dynamic_sql_insert_operators()
 {
 EXEC SQL BEGIN DECLARE SECTION;
@@ -182,6 +214,86 @@ char stmt[]="INSERT INTO operators(title,network_type) VALUES(?, ?);";
        EXEC SQL PREPARE mystmt FROM :stmt;
 
        EXEC SQL EXECUTE mystmt USING :title, :network_type;
+       EXEC SQL COMMIT;
+        return 0;
+}
+int Dynamic_sql_insert_owners()
+{
+EXEC SQL BEGIN DECLARE SECTION;
+
+char stmt[]="INSERT INTO owners(n_passport, full_name) VALUES(?, ?);";
+        EXEC SQL END DECLARE SECTION;
+
+       EXEC SQL PREPARE mystmt FROM :stmt;
+
+       EXEC SQL EXECUTE mystmt USING :n_passport,  :full_name;
+       EXEC SQL COMMIT;
+        return 0;
+}
+int Dynamic_sql_insert_services()
+{
+EXEC SQL BEGIN DECLARE SECTION;
+
+char stmt[]="INSERT INTO services(title, service_title, cost, description) VALUES(?, ?, ?, ?);";
+        EXEC SQL END DECLARE SECTION;
+
+       EXEC SQL PREPARE mystmt FROM :stmt;
+
+       EXEC SQL EXECUTE mystmt USING :title,  :service_title, :cost, :description;
+       EXEC SQL COMMIT;
+        return 0;
+}
+
+int Dynamic_sql_insert_subscriptions()
+{
+EXEC SQL BEGIN DECLARE SECTION;
+
+char stmt[]="INSERT INTO subscriptions(title, number, service_title,n_passport, date_sub) VALUES(?, ?, ?, ?, ?);";
+        EXEC SQL END DECLARE SECTION;
+
+       EXEC SQL PREPARE mystmt FROM :stmt;
+
+       EXEC SQL EXECUTE mystmt USING :title,  :number, :service_title, :n_passport, :date_sub;
+       EXEC SQL COMMIT;
+        return 0;
+}
+
+int Dynamic_sql_insert_phone()
+{
+EXEC SQL BEGIN DECLARE SECTION;
+
+char stmt[]="INSERT INTO phone(title, number,  date_reg ) VALUES(?, ?, ?);";
+        EXEC SQL END DECLARE SECTION;
+
+       EXEC SQL PREPARE mystmt FROM :stmt;
+
+       EXEC SQL EXECUTE mystmt USING :title,  :number, :date_reg;
+       EXEC SQL COMMIT;
+        return 0;
+}
+int Dynamic_sql_insert_contracts()
+{
+EXEC SQL BEGIN DECLARE SECTION;
+
+char stmt[]="INSERT INTO contracts(title, number,  date_reg,n_passport ) VALUES(?, ?, ?, ?);";
+				EXEC SQL END DECLARE SECTION;
+
+       EXEC SQL PREPARE mystmt FROM :stmt;
+
+       EXEC SQL EXECUTE mystmt USING :title,  :number, :date_reg, :n_passport;
+       EXEC SQL COMMIT;
+        return 0;
+}
+int Dynamic_sql_insert_calls()
+{
+EXEC SQL BEGIN DECLARE SECTION;
+
+char stmt[]="INSERT INTO calls(title_inc, title_out, date_call, out_num, incoming_num, duration ) VALUES(?, ?, ?, ?,?,?);";
+				EXEC SQL END DECLARE SECTION;
+
+       EXEC SQL PREPARE mystmt FROM :stmt;
+
+       EXEC SQL EXECUTE mystmt USING :title_inc, :title_out, :date_call, :out_num, :incoming_num, :duration;
        EXEC SQL COMMIT;
         return 0;
 }
@@ -196,27 +308,108 @@ int Delete_values_opertatos()
 				return 0;
 }
 
-
-int Dynamic_sql_select_opertatos()
+int Delete_values_owners()
 {
-     EXEC SQL BEGIN DECLARE SECTION;
-          const char *stmt = "SELECT title,network_type"
-             "  FROM operators "
-             "  WHERE title=?";
-     EXEC SQL END DECLARE SECTION;
+        printf("select deleted n_passport: ");
+        scanf("%s", n_passport);
+        EXEC SQL DELETE FROM owners WHERE n_passport = :n_passport;
+
+        EXEC SQL COMMIT;
+				return 0;
+}
+int Delete_values_services()
+{
+        printf("select deleted title: ");
+        scanf("%s", title);
+				printf("and service_title: ");
+        scanf("%s", service_title);
+        EXEC SQL DELETE FROM services WHERE title = :title and service_title = :service_title;
+
+        EXEC SQL COMMIT;
+				return 0;
+}
+int Delete_values_subscriptions()
+{
+        printf("select deleted n_passport: ");
+        scanf("%s", n_passport);
+				printf("and service_title: ");
+        scanf("%s", service_title);
+				printf("and number: ");
+        scanf("%s", number);
+				printf("and date_sub: ");
+        scanf("%s", date_sub);
+        EXEC SQL DELETE FROM subscriptions WHERE n_passport = :n_passport and service_title = :service_title and number = :number and date_sub= :date_sub;
+
+        EXEC SQL COMMIT;
+				return 0;
+}
+int Delete_values_phone()
+{
+        printf("select deleted title: ");
+        scanf("%s", title);
+				printf("and number: ");
+        scanf("%s", number);
+
+        EXEC SQL DELETE FROM phone WHERE title = :title and number = :number;
+
+        EXEC SQL COMMIT;
+				return 0;
+}
+int Delete_values_contracts()
+{
+        printf("select deleted n_passport: ");
+        scanf("%s", n_passport);
+				printf("and title: ");
+        scanf("%s", title);
+				printf("and number: ");
+        scanf("%s", number);
+				printf("and date_cont: ");
+        scanf("%s", date_cont);
+        EXEC SQL DELETE FROM contracts WHERE n_passport = :n_passport and title = :title and number = :number and date_cont= :date_cont;
+
+        EXEC SQL COMMIT;
+				return 0;
+}
+
+int Delete_values_calls()
+{
+        printf("select deleted incoming_num: ");
+        scanf("%s", incoming_num);
+				printf("and out_num: ");
+        scanf("%s", out_num);
+				printf("and date_call: ");
+        scanf("%s", date_call);
+        EXEC SQL DELETE FROM calls WHERE incoming_num = :incoming_num and out_num = :out_num and date_call= :date_call;
+
+        EXEC SQL COMMIT;
+				return 0;
+}
+
+int Dynamic_sql_select()
+{
+	EXEC SQL BEGIN DECLARE SECTION; int colcount;
+		char str[1024];
+		char colName[1024];
+		int index;
+		EXEC SQL END DECLARE SECTION;
 
 
-
-     EXEC SQL PREPARE sqlstmt FROM :stmt;
-
-
-    printf("select title: ");
-    scanf("%s", title);
-
-    EXEC SQL EXECUTE sqlstmt INTO :title ,:network_type  USING :title;
-    printf("\t %s \t %s \n", title, network_type);
-
-
+		EXEC SQL PREPARE myStr FROM :strSelect;
+		EXEC SQL ALLOCATE DESCRIPTOR myDescr; EXEC SQL DECLARE my_cursor CURSOR FOR myStr; EXEC SQL OPEN my_cursor;
+		while (1) {
+			EXEC SQL FETCH NEXT FROM my_cursor INTO SQL DESCRIPTOR myDescr;
+				if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+				EXEC SQL GET DESCRIPTOR myDescr :colcount = COUNT;
+				for(index =1; index <= colcount; index++)
+				{
+					EXEC SQL GET DESCRIPTOR myDescr VALUE :index :str = DATA;
+					EXEC SQL GET DESCRIPTOR myDescr VALUE :index :colName = NAME;
+					printf( "%s: %s\t",colName,str);
+					}
+						printf( "\n");}
+				printf( "\n");
+	EXEC SQL DEALLOCATE PREPARE myStr;
+	EXEC SQL DEALLOCATE DESCRIPTOR myDescr;
 
     EXEC SQL COMMIT;
     return 0;
@@ -234,7 +427,92 @@ int Update_values_operators()
         EXEC SQL COMMIT;
         return 0;
 }
+int Update_values_owners()
+{
+        printf("select update where full_name:");
+        scanf("%s", full_name);
+        printf("enter new  n_passport: ");
+        scanf("%s", n_passport);
 
+        EXEC SQL UPDATE owners SET full_name = :full_name WHERE n_passport = :n_passport;
+
+        EXEC SQL COMMIT;
+        return 0;
+}
+int Update_values_services()
+{
+				printf("select update where title: ");
+				scanf("%s", title);
+				printf("service_title: ");
+				scanf("%s", service_title);
+				printf("enter new cost: ");
+				scanf("%s", cost);
+				printf("description: ");
+				scanf("%s", description);
+
+        EXEC SQL UPDATE services SET description = :description WHERE title = :title and service_title = :service_title;
+				EXEC SQL UPDATE services SET cost = :cost WHERE title = :title and service_title = :service_title;
+
+        EXEC SQL COMMIT;
+        return 0;
+}
+int Update_values_phone()
+{
+			printf("select update where title: ");
+			scanf("%s", title);
+			printf("number: ");
+			scanf("%s", number);
+			printf("enter new date_reg: ");
+			scanf("%s", date_reg);
+
+        EXEC SQL UPDATE phone SET date_reg = :date_reg WHERE title = :title and number = :number;
+
+        EXEC SQL COMMIT;
+        return 0;
+}
+int Update_values_subscriptions()
+{
+			printf("select update where number: ");
+			scanf("%s", number);
+			printf("service_title: ");
+			scanf("%s", service_title);
+			printf("n_passport: ");
+			scanf("%s", n_passport);
+			printf("date_sub: ");
+			scanf("%s", date_sub);
+			printf("enter new title: ");
+			scanf("%s", title);
+      EXEC SQL UPDATE subscriptions SET title = :title WHERE n_passport = :n_passport and service_title = :service_title and number = :number and date_sub= :date_sub;
+
+        EXEC SQL COMMIT;
+        return 0;
+}
+
+int Update_values_contracts()
+{
+			printf("No update");
+        return 0;
+}
+int Update_values_calls()
+{
+			printf(" select update where out_num: ");
+			scanf("%s", out_num);
+			printf("incoming_num: ");
+			scanf("%s", incoming_num);
+			printf("date_call: ");
+			scanf("%s", date_call);
+      printf("enter new title_inc: ");
+			scanf("%s", title_inc);
+			printf("title_out: ");
+			scanf("%s", title_out);
+			printf("duration: ");
+			scanf("%s", duration);
+
+        EXEC SQL UPDATE calls SET title_inc = :title_inc and title_out = :title_out and duration = :duration WHERE incoming_num = :incoming_num and out_num = :out_num and date_call= :date_call;
+
+        EXEC SQL COMMIT;
+        return 0;
+}
 int Dynamic_sql_select_more_opertatos()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
@@ -251,7 +529,6 @@ int Dynamic_sql_select_more_opertatos()
       scanf("%s", network_type);
 
      EXEC SQL OPEN operators_cursor USING :network_type;
-
 
 
      while (1)
@@ -292,6 +569,7 @@ if (strlen(sitem)>1) continue;
 			printf("_____________________\n");
 			printf("3. update values\n");
 			Update_values_operators();
+
 			printf("_____________________\n");
 			break;
 		}
@@ -299,7 +577,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. update values\n");
-			show_owners();
+			Update_values_owners();
+
 			printf("_____________________\n");
 			break;
 		}
@@ -307,7 +586,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. update values\n");
-			show_services();
+			Update_values_services();
 			printf("_____________________\n");
 			break;
 		}
@@ -315,7 +594,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. update values\n");
-			show_subscriptions();
+			Update_values_subscriptions();
+
 			printf("_____________________\n");
 			break;
 		}
@@ -323,7 +603,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. update values\n");
-			show_phone();
+			Update_values_phone();
+
 			printf("_____________________\n");
 			break;
 		}
@@ -331,7 +612,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. update values\n");
-			show_contracts();
+			Update_values_contracts();
+
 			printf("_____________________\n");
 			break;
 		}
@@ -339,7 +621,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. update values\n");
-			show_calls();
+			Update_values_calls();
+
 			printf("_____________________\n");
 			break;
 		}
@@ -377,7 +660,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_operators();
+			strcpy(strSelect, "select * from operators");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -385,7 +669,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_owners();
+			strcpy(strSelect, "select * from owners");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -393,7 +678,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_services();
+			strcpy(strSelect, "select * from services");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -401,7 +687,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_subscriptions();
+			strcpy(strSelect, "select * from subscriptions");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -409,7 +696,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_phone();
+			strcpy(strSelect, "select * from phone");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -417,7 +705,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_contracts();
+			strcpy(strSelect, "select * from contracts");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -425,7 +714,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("1. show\n");
-			show_calls();
+			strcpy(strSelect, "select * from calls");
+			show_all();
 			printf("_____________________\n");
 			break;
 		}
@@ -470,7 +760,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("5. delete values\n");
-			show_owners();
+			Delete_values_owners();
 			printf("_____________________\n");
 			break;
 		}
@@ -478,7 +768,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("5. delete values\n");
-			show_services();
+			Delete_values_services();
 			printf("_____________________\n");
 			break;
 		}
@@ -486,7 +776,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("5. delete values\n");
-			show_subscriptions();
+			Delete_values_subscriptions();
 			printf("_____________________\n");
 			break;
 		}
@@ -494,7 +784,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("5. delete values\n");
-			show_phone();
+			Delete_values_phone();
 			printf("_____________________\n");
 			break;
 		}
@@ -502,7 +792,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("5. delete values\n");
-			show_contracts();
+			Delete_values_contracts();
 			printf("_____________________\n");
 			break;
 		}
@@ -510,7 +800,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("5. delete values\n");
-			show_calls();
+			Delete_values_calls();
 			printf("_____________________\n");
 			break;
 		}
@@ -547,9 +837,9 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			printf("Title:");
+			printf("Title: ");
 			scanf("%s", title);
-			printf("Network type:");
+			printf("Network type: ");
 			scanf("%s", network_type);
 			Dynamic_sql_insert_operators();
 			printf("%s %s %s\n","Add", title, network_type);
@@ -560,7 +850,11 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			show_owners();
+			printf("n_passport: ");
+			scanf("%s", n_passport);
+			printf("full_name: ");
+			scanf("%s", full_name);
+			Dynamic_sql_insert_owners();
 			printf("_____________________\n");
 			break;
 		}
@@ -568,7 +862,15 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			show_services();
+			printf("title: ");
+			scanf("%s", title);
+			printf("service_title: ");
+			scanf("%s", service_title);
+			printf("cost: ");
+			scanf("%s", cost);
+			printf("description: ");
+			scanf("%s", description);
+			Dynamic_sql_insert_services();
 			printf("_____________________\n");
 			break;
 		}
@@ -576,7 +878,17 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			show_subscriptions();
+			printf("title: ");
+			scanf("%s", title);
+			printf("number: ");
+			scanf("%s", number);
+			printf("service_title: ");
+			scanf("%s", service_title);
+			printf("n_passport: ");
+			scanf("%s", n_passport);
+			printf("date_sub: ");
+			scanf("%s", date_sub);
+			Dynamic_sql_insert_subscriptions();
 			printf("_____________________\n");
 			break;
 		}
@@ -584,7 +896,13 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			show_phone();
+			printf("title: ");
+			scanf("%s", title);
+			printf("number: ");
+			scanf("%s", number);
+			printf("date_reg: ");
+			scanf("%s", date_reg);
+			Dynamic_sql_insert_phone();
 			printf("_____________________\n");
 			break;
 		}
@@ -592,7 +910,15 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			show_contracts();
+			printf("title: ");
+			scanf("%s", title);
+			printf("number: ");
+			scanf("%s", number);
+			printf("date_cont: ");
+			scanf("%s", date_cont);
+			printf("n_passport: ");
+			scanf("%s", n_passport);
+			Dynamic_sql_insert_contracts();
 			printf("_____________________\n");
 			break;
 		}
@@ -600,7 +926,19 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("6. Dynamic sql insert\n");
-			show_calls();
+			printf("title_inc: ");
+			scanf("%s", title_inc);
+			printf("title_out: ");
+			scanf("%s", title_out);
+			printf("date_call: ");
+			scanf("%s", date_call);
+			printf("out_num: ");
+			scanf("%s", out_num);
+			printf("incoming_num: ");
+			scanf("%s", incoming_num);
+			printf("duration: ");
+			scanf("%s", duration);
+			Dynamic_sql_insert_calls();
 			printf("_____________________\n");
 			break;
 		}
@@ -723,7 +1061,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			Dynamic_sql_select_opertatos();
+			strcpy(strSelect, "select * from operators");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -731,7 +1070,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			show_owners();
+			strcpy(strSelect, "select * from owners");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -739,7 +1079,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			show_services();
+			strcpy(strSelect, "select * from services");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -747,7 +1088,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			show_subscriptions();
+			strcpy(strSelect, "select * from subscriptions");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -755,7 +1097,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			show_phone();
+			strcpy(strSelect, "select * from phone");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -763,7 +1106,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			show_contracts();
+			strcpy(strSelect, "select * from contracts");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
@@ -771,7 +1115,8 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("7. Dynamic sql select one\n");
-			show_calls();
+			strcpy(strSelect, "select * from calls");
+			Dynamic_sql_select();
 			printf("_____________________\n");
 			break;
 		}
