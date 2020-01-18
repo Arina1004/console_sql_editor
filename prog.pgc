@@ -857,24 +857,72 @@ int Dynamic_sql_select_more_services(){
 
 }
 int select_operators_with_join(){
-	EXEC SQL BEGIN DECLARE SECTION;
-		const char *stmt="SELECT o.title, o.network_type ,p.number, p.date_reg"
-		"FROM phone AS p"
-		"INNER JOIN operators AS o ON p.title = o.title WHERE p.date_reg >= ?";
-	EXEC SQL END DECLARE SECTION;
-	printf("SELECT o.title, o.network_type ,p.number, p.date_reg, FROM phone AS p INNER JOIN operators AS o ON p.title = o.title WHERE p.date_reg >= ?");
-	scanf("%s", date_reg);
-	EXEC SQL PREPARE select_stmt FROM :stmt;
+EXEC SQL BEGIN DECLARE SECTION;
+    char stmt[]="SELECT o.title, o.network_type, p.number FROM operators as o  INNER JOIN phone as p ON o.title = p.title WHERE o.title=?";
+  EXEC SQL END DECLARE SECTION;
+  printf("%s",stmt);
+	scanf("%s", title);
+
+  EXEC SQL PREPARE select_stmt FROM :stmt;
   EXEC SQL DECLARE select_with_join_one_cursor CURSOR FOR select_stmt;
-  EXEC SQL OPEN select_with_join_one_cursor USING :date_reg;
+  EXEC SQL OPEN select_with_join_one_cursor USING :title;
 
   while(1) {
-    EXEC SQL FETCH select_with_join_one_cursor INTO :title, :network_type, :number, :date_reg;
-    if (sqlca.sqlcode == ECPG_NOT_FOUND) {printf("Not found\n");}
+    EXEC SQL FETCH select_with_join_one_cursor INTO :title, :network_type, :number;
     if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
-    printf("title: %s\t network_type:%s\t number: %s\t  date_reg: %s\t\n", title, network_type, number, date_reg);
+    printf("title: %s\t network_type:%s\t  number:%s\t\n", title, network_type, number);
   }
   EXEC SQL CLOSE select_with_join_one_cursor;
+  EXEC SQL COMMIT;
+
+  return 0;
+
+
+}
+
+int select_owners_with_join(){
+	EXEC SQL BEGIN DECLARE SECTION;
+		char title_1[40];
+		const char *stmt="SELECT o.n_passport, o.full_name ,c.number"
+		"FROM contracts AS c"
+		"INNER JOIN owners AS o ON c.n_passport = o.n_passport WHERE c.title=?";
+	EXEC SQL END DECLARE SECTION;
+	printf("SELECT o.n_passport, o.full_name ,c.number FROM contracts AS c INNER JOIN owners AS o ON c.n_passport = o.n_passport WHERE c.title=?: ");
+	scanf("%s", title_1);
+	EXEC SQL PREPARE select_stmt FROM :stmt;
+  EXEC SQL DECLARE select_with_join_two_cursor CURSOR FOR select_stmt;
+  EXEC SQL OPEN select_with_join_two_cursor USING :title_1;
+
+  while(1) {
+    EXEC SQL FETCH select_with_join_two_cursor INTO :n_passport, :full_name, :number;
+    if (sqlca.sqlcode == ECPG_NOT_FOUND) {printf("Not found\n");}
+    if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) {
+		printf(sqlca.sqlstate);
+		break;}
+    printf("title: %s\t network_type:%s\t number: %s\t  \n", n_passport, full_name, number);
+  }
+  EXEC SQL CLOSE select_with_join_two_cursor;
+  EXEC SQL COMMIT;
+
+  return 0;
+
+
+}
+
+int select_phone_with_join(){
+
+  EXEC SQL PREPARE select_stmt FROM "Select title from operators where title in
+	(Select title from calls)";
+	EXEC SQL DECLARE select_with_join_t_cursor CURSOR FOR select_stmt;
+	
+  EXEC SQL OPEN select_with_join_t_cursor;
+
+  while(1) {
+    EXEC SQL FETCH select_with_join_t_cursor INTO :title;
+    if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+    printf("title: %s\t \n", title);
+  }
+  EXEC SQL CLOSE select_with_join_t_cursor;
   EXEC SQL COMMIT;
 
   return 0;
@@ -888,7 +936,7 @@ int menu_query_sql_select_with_join(){
 	{
 		printf("	1. operators\n");
 		printf("	2. owners\n");
-		printf("	3. services\n");
+		printf("	3. Join\n");
 		printf("	4. phone\n");
 		printf("	5. subscriptions\n");
 		printf("	6. contracts\n");
@@ -914,7 +962,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. query with join\n");
-			Update_values_owners();
+			select_owners_with_join();
 
 			printf("_____________________\n");
 			break;
@@ -923,7 +971,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. query with join\n");
-			Update_values_services();
+			select_phone_with_join();
 			printf("_____________________\n");
 			break;
 		}

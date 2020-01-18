@@ -1719,30 +1719,29 @@ int Dynamic_sql_select_more_services(){
 
 }
 int select_operators_with_join(){
-	/* exec sql begin declare section */
-		  
-		
-		
-	
+/* exec sql begin declare section */
+     
+  
 #line 861 "prog.pgc"
- const char * stmt = "SELECT o.title, o.network_type ,p.number, p.date_reg" "FROM phone AS p" "INNER JOIN operators AS o ON p.title = o.title WHERE p.date_reg >= ?" ;
+ char stmt [] = "SELECT o.title, o.network_type, p.number FROM operators as o  INNER JOIN phone as p ON o.title = p.title WHERE o.title=?" ;
 /* exec sql end declare section */
-#line 864 "prog.pgc"
+#line 862 "prog.pgc"
 
-	printf("SELECT o.title, o.network_type ,p.number, p.date_reg, FROM phone AS p INNER JOIN operators AS o ON p.title = o.title WHERE p.date_reg >= ?");
-	scanf("%s", date_reg);
-	{ ECPGprepare(__LINE__, NULL, 0, "select_stmt", stmt);}
-#line 867 "prog.pgc"
+  printf("%s",stmt);
+	scanf("%s", title);
+
+  { ECPGprepare(__LINE__, NULL, 0, "select_stmt", stmt);}
+#line 866 "prog.pgc"
 
   /* declare select_with_join_one_cursor cursor for $1 */
-#line 868 "prog.pgc"
+#line 867 "prog.pgc"
 
   { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "declare select_with_join_one_cursor cursor for $1", 
 	ECPGt_char_variable,(ECPGprepared_statement(NULL, "select_stmt", __LINE__)),(long)1,(long)1,(1)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
-	ECPGt_char,(date_reg),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
-#line 869 "prog.pgc"
+#line 868 "prog.pgc"
 
 
   while(1) {
@@ -1752,20 +1751,113 @@ int select_operators_with_join(){
 	ECPGt_char,(network_type),(long)10,(long)1,(10)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
 	ECPGt_char,(number),(long)11,(long)1,(11)*sizeof(char), 
-	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
-	ECPGt_char,(date_reg),(long)20,(long)1,(20)*sizeof(char), 
 	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EORT);}
-#line 872 "prog.pgc"
+#line 871 "prog.pgc"
 
-    if (sqlca.sqlcode == ECPG_NOT_FOUND) {printf("Not found\n");}
     if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
-    printf("title: %s\t network_type:%s\t number: %s\t  date_reg: %s\t\n", title, network_type, number, date_reg);
+    printf("title: %s\t network_type:%s\t  number:%s\t\n", title, network_type, number);
   }
   { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "close select_with_join_one_cursor", ECPGt_EOIT, ECPGt_EORT);}
-#line 877 "prog.pgc"
+#line 875 "prog.pgc"
 
   { ECPGtrans(__LINE__, NULL, "commit");}
-#line 878 "prog.pgc"
+#line 876 "prog.pgc"
+
+
+  return 0;
+
+
+}
+
+int select_owners_with_join(){
+	/* exec sql begin declare section */
+		 
+		  
+		
+		
+	
+#line 885 "prog.pgc"
+ char title_1 [ 40 ] ;
+ 
+#line 886 "prog.pgc"
+ const char * stmt = "SELECT o.n_passport, o.full_name ,c.number" "FROM contracts AS c" "INNER JOIN owners AS o ON c.n_passport = o.n_passport WHERE c.title=?" ;
+/* exec sql end declare section */
+#line 889 "prog.pgc"
+
+	printf("SELECT o.n_passport, o.full_name ,c.number FROM contracts AS c INNER JOIN owners AS o ON c.n_passport = o.n_passport WHERE c.title=?: ");
+	scanf("%s", title_1);
+	{ ECPGprepare(__LINE__, NULL, 0, "select_stmt", stmt);}
+#line 892 "prog.pgc"
+
+  /* declare select_with_join_two_cursor cursor for $1 */
+#line 893 "prog.pgc"
+
+  { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "declare select_with_join_two_cursor cursor for $1", 
+	ECPGt_char_variable,(ECPGprepared_statement(NULL, "select_stmt", __LINE__)),(long)1,(long)1,(1)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(title_1),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 894 "prog.pgc"
+
+
+  while(1) {
+    { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "fetch select_with_join_two_cursor", ECPGt_EOIT, 
+	ECPGt_char,(n_passport),(long)20,(long)1,(20)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(full_name),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, 
+	ECPGt_char,(number),(long)11,(long)1,(11)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EORT);}
+#line 897 "prog.pgc"
+
+    if (sqlca.sqlcode == ECPG_NOT_FOUND) {printf("Not found\n");}
+    if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) {
+		printf(sqlca.sqlstate);
+		break;}
+    printf("title: %s\t network_type:%s\t number: %s\t  \n", n_passport, full_name, number);
+  }
+  { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "close select_with_join_two_cursor", ECPGt_EOIT, ECPGt_EORT);}
+#line 904 "prog.pgc"
+
+  { ECPGtrans(__LINE__, NULL, "commit");}
+#line 905 "prog.pgc"
+
+
+  return 0;
+
+
+}
+
+int select_phone_with_join(){
+
+  { ECPGprepare(__LINE__, NULL, 0, "select_stmt", "Select title from operators where title in\
+	(Select title from calls)");}
+#line 915 "prog.pgc"
+
+	/* declare select_with_join_t_cursor cursor for $1 */
+#line 916 "prog.pgc"
+
+	
+  { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "declare select_with_join_t_cursor cursor for $1", 
+	ECPGt_char_variable,(ECPGprepared_statement(NULL, "select_stmt", __LINE__)),(long)1,(long)1,(1)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT, ECPGt_EORT);}
+#line 918 "prog.pgc"
+
+
+  while(1) {
+    { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "fetch select_with_join_t_cursor", ECPGt_EOIT, 
+	ECPGt_char,(title),(long)40,(long)1,(40)*sizeof(char), 
+	ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EORT);}
+#line 921 "prog.pgc"
+
+    if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+    printf("title: %s\t \n", title);
+  }
+  { ECPGdo(__LINE__, 0, 1, NULL, 0, ECPGst_normal, "close select_with_join_t_cursor", ECPGt_EOIT, ECPGt_EORT);}
+#line 925 "prog.pgc"
+
+  { ECPGtrans(__LINE__, NULL, "commit");}
+#line 926 "prog.pgc"
 
 
   return 0;
@@ -1779,7 +1871,7 @@ int menu_query_sql_select_with_join(){
 	{
 		printf("	1. operators\n");
 		printf("	2. owners\n");
-		printf("	3. services\n");
+		printf("	3. Join\n");
 		printf("	4. phone\n");
 		printf("	5. subscriptions\n");
 		printf("	6. contracts\n");
@@ -1805,7 +1897,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. query with join\n");
-			Update_values_owners();
+			select_owners_with_join();
 
 			printf("_____________________\n");
 			break;
@@ -1814,7 +1906,7 @@ if (strlen(sitem)>1) continue;
 		{
 			printf("_____________________\n");
 			printf("3. query with join\n");
-			Update_values_services();
+			select_phone_with_join();
 			printf("_____________________\n");
 			break;
 		}
@@ -2461,7 +2553,7 @@ int menu()
 		printf("6. Dynamic sql insert\n");
 		printf("7. Dynamic sql select one\n");
 		printf("8. Dynamic sql select more than one\n");
-		printf("10. Query with join\n");
+		printf("2. Query with join\n");
 		printf("9. quit\n");
 		printf("choose menu item > ");
 		if(scanf("%s", sitem)!=1) break;
@@ -2534,7 +2626,7 @@ if (strlen(sitem)>1) continue;
 int main(){
 
  { ECPGconnect(__LINE__, 0, ConnectionString , Login , Password , NULL, 0); }
-#line 1645 "prog.pgc"
+#line 1693 "prog.pgc"
 
  if (sqlca.sqlcode !=0 || strncmp(sqlca.sqlstate,"00",2))
 {
@@ -2547,7 +2639,7 @@ else
 					menu();
 		}
 { ECPGdisconnect(__LINE__, "CURRENT");}
-#line 1656 "prog.pgc"
+#line 1704 "prog.pgc"
 
 printf("disconnect --OK\n");
 

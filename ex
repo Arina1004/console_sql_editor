@@ -1,98 +1,25 @@
+int select_operators_with_join(){
+	EXEC SQL BEGIN DECLARE SECTION;
+		const char *stmt="SELECT o.title, o.network_type ,p.number, p.date_reg"
+		"FROM phone AS p"
+		"INNER JOIN operators AS o ON p.title = o.title WHERE p.date_reg >= ?;";
+	EXEC SQL END DECLARE SECTION;
+	printf("SELECT o.title, o.network_type ,p.number, p.date_reg, FROM phone AS p INNER JOIN operators AS o ON p.title = o.title WHERE p.date_reg >= ?: ");
+	scanf("%s", date_reg);
+	EXEC SQL PREPARE select_stmt FROM :stmt;
+  EXEC SQL DECLARE select_with_join_one_cursor CURSOR FOR select_stmt;
+  EXEC SQL OPEN select_with_join_one_cursor USING :date_reg;
 
-int Dynamic_sql_select_phone(){
-	 EXEC SQL BEGIN DECLARE SECTION;
-          const char *stmt = "SELECT title, number,  date_reg "
-             "  FROM phone "
-             "  WHERE title=? and number=?";
-     EXEC SQL END DECLARE SECTION;
+  while(1) {
+    EXEC SQL FETCH select_with_join_one_cursor INTO :title, :network_type, :number, :date_reg;
+    if (sqlca.sqlcode == ECPG_NOT_FOUND) {printf("Not found\n");}
+    if (sqlca.sqlcode == ECPG_NOT_FOUND || strncmp(sqlca.sqlstate,"00",2)) break;
+    printf("title: %s\t network_type:%s\t number: %s\t  date_reg: %s\t\n", title, network_type, number, date_reg);
+  }
+  EXEC SQL CLOSE select_with_join_one_cursor;
+  EXEC SQL COMMIT;
 
-     EXEC SQL PREPARE sqlstmt FROM :stmt;
-
-    printf("select title: ");
-    scanf("%s", title);
-    printf("and number: ");
-    scanf("%s", number);
-
-    EXEC SQL EXECUTE sqlstmt INTO :title,  :number, :date_reg USING :title,  :number;
-    printf("\t %s \t %s \t %s \n", title, number,  date_reg );
-
-
-
-    EXEC SQL COMMIT;
-    return 0;
-}
-int Dynamic_sql_select_subscriptions(){
-	 EXEC SQL BEGIN DECLARE SECTION;
+  return 0;
 
 
-          const char *stmt = "SELECT title, number, service_title,n_passport, date_sub "
-             "  FROM subscriptions "
-             "  WHERE service_title=? and number=? and n_passport=? and date_sub=?";
-     EXEC SQL END DECLARE SECTION;
-     EXEC SQL PREPARE sqlstmt FROM :stmt;
-
-    printf("select n_passport: ");
-    scanf("%s", n_passport);
-    printf("and service_title: ");
-    scanf("%s", service_title);
-    printf("and number: ");
-    scanf("%s", number);
-    printf("and date_sub: ");
-    scanf("%s", date_sub);
-
-    EXEC SQL EXECUTE sqlstmt INTO :title,  :number, :service_title, :n_passport, :date_sub USING :number, :service_title, :n_passport, :date_sub;
-    printf("\t %s \t %s \t %s \t %s \t %s \n", title, number, service_title,n_passport, date_sub);
-
-
-
-    EXEC SQL COMMIT;
-    return 0;
-}
-
-int Dynamic_sql_select_contracts(){
-	 EXEC SQL BEGIN DECLARE SECTION;
-
-          const char *stmt = "SELECT title, number, date_cont,n_passport "
-             "  FROM contracts "
-             "  WHERE title=? and number=? and n_passport=? and date_cont=?";
-     EXEC SQL END DECLARE SECTION;
-     EXEC SQL PREPARE sqlstmt FROM :stmt;
-
-    printf("select n_passport: ");
-    scanf("%s", n_passport);
-    printf("and title: ");
-    scanf("%s", title);
-    printf("and number: ");
-    scanf("%s", number);
-    printf("and date_cont: ");
-    scanf("%s", date_cont);
-
-    EXEC SQL EXECUTE sqlstmt INTO :title,  :number, :date_cont, :n_passport USING :title,  :number, :date_cont, :n_passport;
-    printf("\t %s \t %s \t %s \t %s  \n", title, number, date_cont, n_passport);
-
-
-
-    EXEC SQL COMMIT;
-    return 0;
-}
-int Dynamic_sql_select_calls(){
-	 EXEC SQL BEGIN DECLARE SECTION;
-          const char *stmt = "SELECT title_inc, title_out, date_call, out_num, incoming_num, duration "
-             "  FROM calls "
-             "  WHERE incoming_num=? and out_num=? and date_call=?";
-     EXEC SQL END DECLARE SECTION;
-     EXEC SQL PREPARE sqlstmt FROM :stmt;
-
-    printf("select incoming_num: ");
-    scanf("%s", incoming_num);
-    printf("and out_num: ");
-    scanf("%s", out_num);
-    printf("and date_call: ");
-    scanf("%s", date_call);
-    EXEC SQL EXECUTE sqlstmt INTO :title_inc, :title_out, :date_call, :out_num, :incoming_num, :duration USING :incoming_num,  :out_num, :date_call;
-    printf("\t %s \t %s \t %s \t %s \t %s \t %s \n", title_inc, title_out, date_call, out_num, incoming_num, duration);
-
-
-    EXEC SQL COMMIT;
-    return 0;
 }
